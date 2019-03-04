@@ -94,7 +94,7 @@ class CreateChannelViewController: UIViewController {
         progressHud.label.text = "Loading..."
         progressHud.contentColor = .black
         loadingUsers = true
-        usersQuery.load(limit: limit) { [unowned self] (users, error) in
+        usersQuery.load() { [unowned self] (users, error) in
             progressHud.hide(animated: true)
             if error == nil {
                 guard let users = users else { return }
@@ -133,7 +133,7 @@ class CreateChannelViewController: UIViewController {
         if let text = searchText {
             usersQuery.setDisplayNameSearch(text)
         }
-        usersQuery.load(limit: usersToFetch) { [unowned self] (users, error) in
+        usersQuery.load() { [unowned self] (users, error) in
             if error == nil {
                 guard let users = users else { return }
                 let filteredUsers = users.filter({ $0.getId() != CCPClient.getCurrentUser().getId() })
@@ -187,7 +187,7 @@ class CreateChannelViewController: UIViewController {
         if isAddingParticipants {
             let participants = viewModel.selectedItems.map { $0.userId }
             guard let groupChannel = channel else { return }
-            groupChannel.inviteParticipants(participants: participants) { error in
+            groupChannel.inviteParticipants(participantIds: participants) { error in
                 if error == nil {
                     self.dismiss(animated: true, completion: {
                         self.participantsAdded?()

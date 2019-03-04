@@ -228,7 +228,7 @@ extension GroupChannelsViewController {
 // MARK:- CCPChannelDelegate
 extension GroupChannelsViewController: CCPChannelDelegate {
     
-    public func channelDidReceiveMessage(channel: CCPBaseChannel, message: CCPMessage) {
+    public func onMessageReceived(channel: CCPBaseChannel, message: CCPMessage) {
         if let index = channels.index(where: { (groupChannel) -> Bool in
             groupChannel.getId() == channel.getId()
         }) {
@@ -239,23 +239,6 @@ extension GroupChannelsViewController: CCPChannelDelegate {
         }
     }
     
-    public func channelDidChangeTypingStatus(channel: CCPBaseChannel) { }
-    
-    public func channelDidUpdateReadStatus(channel: CCPBaseChannel) { }
-    
-    public func channelDidUpdated(channel: CCPBaseChannel) { }
-    
-    public func onTotalGroupChannelCount(count: Int, totalCountFilterParams: TotalCountFilterParams) { }
-    
-    public func onGroupChannelParticipantJoined(groupChannel: CCPGroupChannel, participant: CCPUser) { }
-    
-    public func onGroupChannelParticipantLeft(groupChannel: CCPGroupChannel, participant: CCPUser) { }
-    
-    public func onGroupChannelMessageUpdated(groupChannel: CCPGroupChannel, message: CCPMessage) { }
-    
-    public func onOpenChannelMessageUpdated(openChannel: CCPOpenChannel, message: CCPMessage) { }
-    
-    public func onGroupChannelParticipantDeclined(groupChannel: CCPGroupChannel, participant: CCPUser) { }
 }
 
 // MARK:- CCPConnectionDelegate

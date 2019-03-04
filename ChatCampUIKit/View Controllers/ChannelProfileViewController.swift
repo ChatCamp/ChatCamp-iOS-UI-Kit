@@ -80,7 +80,7 @@ extension ChannelProfileViewController {
                     cell.avatarImageView.setImageForName(string: participants?[indexPath.row - 1].getDisplayName() ?? "?", circular: true, textAttributes: nil)
                 }
                 cell.displayNameLabel.text = participants?[indexPath.row - 1].getDisplayName()
-                if participants?[indexPath.row - 1].getIsOnline() ?? false {
+                if participants?[indexPath.row - 1].isOnline() ?? false {
                     cell.onlineStatusImageView.image = UIImage(named: "online", in: Bundle(for: Message.self), compatibleWith: nil)
                 } else {
                     cell.onlineStatusImageView.image = UIImage(named: "offline", in: Bundle(for: Message.self), compatibleWith: nil)

@@ -34,6 +34,7 @@ open class OpenChannelChatViewController: MessagesViewController {
         self.channel = channel
         self.sender = sender
         previousMessagesQuery = channel.createPreviousMessageListQuery()
+        previousMessagesQuery.setDirection(.previous)
         self.loadingMessages = false
         super.init(nibName: nil, bundle: nil)
         CCPOpenChannel.get(openChannelId: channel.getId()) {(openChannel, error) in
@@ -310,7 +311,7 @@ extension OpenChannelChatViewController: MessageCellDelegate {
 extension OpenChannelChatViewController: MessageInputBarDelegate {
     public func messageInputBar(_ inputBar: MessageInputBar, didPressSendButtonWith text: String) {
         inputBar.inputTextView.text = ""
-        channel.sendMessage(text: text) { [unowned self] (message, error) in
+        channel.sendMessage(message: text) { [unowned self] (message, error) in
             inputBar.inputTextView.text = ""
             if error != nil {
                 DispatchQueue.main.async {
@@ -339,7 +340,8 @@ extension OpenChannelChatViewController: MessageImageDelegate {
 
 // MARK:- CCPChannelDelegate
 extension OpenChannelChatViewController: CCPChannelDelegate {
-    public func channelDidReceiveMessage(channel: CCPBaseChannel, message: CCPMessage) {
+    
+    public func onMessageReceived(channel: CCPBaseChannel, message: CCPMessage) {
         if channel.getId() == self.channel.getId() {
             let mkMessage = Message(fromCCPMessage: message)
             mkMessages.append(mkMessage)
@@ -362,28 +364,6 @@ extension OpenChannelChatViewController: CCPChannelDelegate {
             print(self.db.errorMessage)
         }
     }
-    
-    public func channelDidChangeTypingStatus(channel: CCPBaseChannel) {
-        // Not applicable
-    }
-    
-    public func channelDidUpdateReadStatus(channel: CCPBaseChannel) {
-        // Not applicable
-    }
-    
-    public func channelDidUpdated(channel: CCPBaseChannel) { }
-    
-    public func onTotalGroupChannelCount(count: Int, totalCountFilterParams: TotalCountFilterParams) { }
-    
-    public func onGroupChannelParticipantJoined(groupChannel: CCPGroupChannel, participant: CCPUser) { }
-    
-    public func onGroupChannelParticipantLeft(groupChannel: CCPGroupChannel, participant: CCPUser) { }
-    
-    public func onGroupChannelParticipantDeclined(groupChannel: CCPGroupChannel, participant: CCPUser) { }
-    
-    public func onGroupChannelMessageUpdated(groupChannel: CCPGroupChannel, message: CCPMessage) { }
-    
-    public func onOpenChannelMessageUpdated(openChannel: CCPOpenChannel, message: CCPMessage) { }
     
 }
 
@@ -416,7 +396,7 @@ extension OpenChannelChatViewController {
         if messagesCollectionView.indexPathsForVisibleItems.contains([0, 0]) && !self.loadingMessages && self.mkMessages.count >= 30 {
             self.loadingMessages = true
             let count = self.messageCount
-            self.previousMessagesQuery.load(limit: count, reverse: true) { (messages, error) in
+            self.previousMessagesQuery.load() { (messages, error) in
                 if error != nil {
                     DispatchQueue.main.async {
                         self.showAlert(title: "Can't Load Messages", message: "An error occurred while loading the messages. Please try again.", actionText: "Ok")
@@ -606,7 +586,7 @@ extension OpenChannelChatViewController {
             }
         }
         
-        previousMessagesQuery.load(limit: count, reverse: true) { (messages, error) in
+        previousMessagesQuery.load() { (messages, error) in
             if error != nil {
                 DispatchQueue.main.async {
                     self.showAlert(title: "Can't Load Messages", message: "An error occurred while loading the messages. Please try again.", actionText: "Ok")

@@ -45,6 +45,7 @@ public class ChatViewController: MessagesViewController {
         self.lastReadSent = 0
         self.loadingMessages = false
         previousMessagesQuery = channel.createPreviousMessageListQuery()
+        previousMessagesQuery.setDirection(.previous)
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -277,23 +278,7 @@ extension ChatViewController: MessageImageDelegate {
 // MARK:- CCPChannelDelegate
 extension ChatViewController: CCPChannelDelegate {
     
-    public func channelDidChangeTypingStatus(channel: CCPBaseChannel) {
-        if channel.getId() == self.channel.getId() {
-            if let c = channel as? CCPGroupChannel {
-                if let p = c.getTypingParticipants().first {
-                    if p.getId() != self.sender.id {
-                        let sender = Sender(id: p.getId(), displayName: p.getDisplayName()!)
-                        self.showLoadingDots(sender: sender)
-                    }
-                }
-                else {
-                    self.removeLoadingDots()
-                }
-            }
-        }
-    }
-    
-    public func channelDidReceiveMessage(channel: CCPBaseChannel, message: CCPMessage) {
+    public func onMessageReceived(channel: CCPBaseChannel, message: CCPMessage) {
         if channel.getId() == self.channel.getId() {
             let mkMessage = Message(fromCCPMessage: message)
             self.removeLoadingDots()
@@ -322,7 +307,7 @@ extension ChatViewController: CCPChannelDelegate {
             self.channel.markAsRead()
             self.lastReadSent = NSDate().timeIntervalSince1970 * 1000
         }
-            
+        
         do {
             try self.db.insertChat(channel: channel, message: message)
         } catch {
@@ -336,46 +321,45 @@ extension ChatViewController: CCPChannelDelegate {
         }
     }
     
-    public func channelDidUpdateReadStatus(channel: CCPBaseChannel) {
+    public func onTypingStatusChanged(groupChannel: CCPGroupChannel) {
         if channel.getId() == self.channel.getId() {
-            if let c = channel as? CCPGroupChannel {
-                if c.getReadReceipt().count > 0 && c.getReadReceipt().count == c.getParticipants().count {
-                    var r: Double = 0
-                    (_, r) = c.getReadReceipt().first!
-                    for (_, time) in c.getReadReceipt() {
-                        if(time < r) {
-                            r = time
-                        }
+            if let p = groupChannel.getTypingParticipants().first {
+                if p.getId() != self.sender.id {
+                    let sender = Sender(id: p.getId(), displayName: p.getDisplayName()!)
+                    self.showLoadingDots(sender: sender)
+                }
+            }
+            else {
+                self.removeLoadingDots()
+            }
+        }
+    }
+    
+    public func onReadStatusUpdated(groupChannel: CCPGroupChannel) {
+        if channel.getId() == self.channel.getId() {
+            if groupChannel.getReadReceipt().count > 0 && groupChannel.getReadReceipt().count == groupChannel.getParticipants().count {
+                var r: Double = 0
+                (_, r) = groupChannel.getReadReceipt().first!
+                for (_, time) in groupChannel.getReadReceipt() {
+                    if(time < r) {
+                        r = time
                     }
-                    self.lastRead = r
-                    DispatchQueue.main.async {
-                        self.messagesCollectionView.reloadData()
-//                        self.messagesCollectionView.scrollToBottom(animated: false)
-                    }
+                }
+                self.lastRead = r
+                DispatchQueue.main.async {
+                    self.messagesCollectionView.reloadData()
+                    //                        self.messagesCollectionView.scrollToBottom(animated: false)
                 }
             }
         }
         
         do {
-            try self.db.updateGroupChannel(channel: channel as! CCPGroupChannel)
+            try self.db.updateGroupChannel(channel: channel)
         } catch {
             print(self.db.errorMessage)
         }
     }
     
-    public func channelDidUpdated(channel: CCPBaseChannel) { }
-    
-    public func onTotalGroupChannelCount(count: Int, totalCountFilterParams: TotalCountFilterParams) { }
-    
-    public func onGroupChannelParticipantJoined(groupChannel: CCPGroupChannel, participant: CCPUser) { }
-    
-    public func onGroupChannelParticipantLeft(groupChannel: CCPGroupChannel, participant: CCPUser) { }
-    
-    public func onGroupChannelMessageUpdated(groupChannel: CCPGroupChannel, message: CCPMessage) { }
-    
-    public func onOpenChannelMessageUpdated(openChannel: CCPOpenChannel, message: CCPMessage) { }
-    
-    public func onGroupChannelParticipantDeclined(groupChannel: CCPGroupChannel, participant: CCPUser) { }
 }
 
 // MARK:- CCPConnectionDelegate
@@ -425,7 +409,7 @@ extension ChatViewController {
             print("REACHED TOP")
             self.loadingMessages = true
             let count = self.messageCount
-            self.previousMessagesQuery.load(limit: count, reverse: true) { (messages, error) in
+            self.previousMessagesQuery.load() { (messages, error) in
                 if error != nil {
                     DispatchQueue.main.async {
                         self.showAlert(title: "Can't Load Messages", message: "An error occurred while loading the messages. Please try again.", actionText: "Ok")
@@ -491,8 +475,8 @@ extension ChatViewController {
                 }
             }
         }
-        
-        previousMessagesQuery.load(limit: count, reverse: true) { (messages, error) in
+
+        previousMessagesQuery.load() { (messages, error) in
             if error != nil {
                 DispatchQueue.main.async {
                     self.showAlert(title: "Can't Load Messages", message: "An error occurred while loading the messages. Please try again.", actionText: "Ok")
@@ -527,7 +511,9 @@ extension ChatViewController {
     }
     
     public func loadMessagesFromAPI() {
-        channel.createPreviousMessageListQuery().load(limit: messageCount, reverse: true) { (messages, error) in
+        let previousMessagesListQuery = channel.createPreviousMessageListQuery()
+        previousMessagesListQuery.setDirection(.previous)
+        previousMessagesListQuery.load() { (messages, error) in
             if error != nil {
                 DispatchQueue.main.async {
                     self.showAlert(title: "Can't Load Messages", message: "An error occurred while loading the messages. Please try again.", actionText: "Ok")
@@ -924,7 +910,7 @@ extension ChatViewController: MessageInputBarDelegate {
         } else {
             channel.stopTyping()
             inputBar.inputTextView.text = ""
-            channel.sendMessage(text: text) { [weak self] (message, error) in
+            channel.sendMessage(message: text) { [weak self] (message, error) in
                 inputBar.inputTextView.text = ""
                 if error != nil {
                     DispatchQueue.main.async {
@@ -949,6 +935,7 @@ extension ChatViewController: MessageInputBarDelegate {
 
 // MARK:- UICollectionViewDelegate
 extension ChatViewController: MessageCellDelegate {
+    
     public func didTapMessage(in cell: MessageCollectionViewCell) {
         let indexPath = messagesCollectionView.indexPath(for: cell)!
         let message = mkMessages[indexPath.section]
@@ -985,6 +972,7 @@ extension ChatViewController: MessageCellDelegate {
     public func didSelectURL(_ url: URL) {
         openWebView(url)
     }
+    
 }
 
 extension ChatViewController: UIDocumentInteractionControllerDelegate {

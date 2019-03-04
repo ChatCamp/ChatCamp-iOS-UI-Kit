@@ -42,7 +42,7 @@ class ProfileViewController: UIViewController {
             profileImageView.setImageForName(string: participant?.getDisplayName() ?? "?", circular: true, textAttributes: nil)
         }
         
-        if participant?.getIsOnline() ?? false {
+        if participant?.isOnline() ?? false {
             onlineStatusImageView.image = UIImage(named: "online", in: Bundle(for: ProfileViewController.self), compatibleWith: nil)
         } else {
             onlineStatusImageView.image = UIImage(named: "offline", in: Bundle(for: ProfileViewController.self), compatibleWith: nil)

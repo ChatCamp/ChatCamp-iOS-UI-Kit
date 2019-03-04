@@ -74,7 +74,7 @@ open class UsersViewController: UITableViewController {
         progressHud.label.text = "Loading..."
         progressHud.contentColor = .black
         loadingUsers = true
-        usersQuery.load(limit: limit) { [unowned self] (users, error) in
+        usersQuery.load() { [unowned self] (users, error) in
             progressHud.hide(animated: true)
             if error == nil {
                 if users?.count ?? 0 <= 1 && self.users.count == 0 {
@@ -118,7 +118,7 @@ open class UsersViewController: UITableViewController {
         if let text = searchText {
             usersQuery.setDisplayNameSearch(text)
         }
-        usersQuery.load(limit: usersToFetch) { [unowned self] (users, error) in
+        usersQuery.load() { [unowned self] (users, error) in
             if error == nil {
                 if users?.count ?? 0 == 0 {
                     self.messageLabel.frame = self.view.bounds
@@ -187,7 +187,7 @@ extension UsersViewController {
         } else {
             cell.avatarImageView.setImageForName(string: user.getDisplayName() ?? "?", circular: true, textAttributes: nil)
         }
-        if user.getIsOnline() ?? false {
+        if user.isOnline() ?? false {
             cell.onlineStatusImageView.image = UIImage(named: "online", in: Bundle(for: Message.self), compatibleWith: nil)
         } else {
             cell.onlineStatusImageView.image = UIImage(named: "offline", in: Bundle(for: Message.self), compatibleWith: nil)

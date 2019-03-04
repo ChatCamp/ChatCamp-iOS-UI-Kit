@@ -28,15 +28,14 @@ extension AttachmentManager {
     func uploadAttachment(data: Data, channel: CCPBaseChannel, fileName: String, fileType: String, uploadProgressHandler: @escaping CCPBaseChannel.UploadProgressHandler ,completionHandler: @escaping (CCPMessage?, Error?) -> Void) {
         if channel.isGroupChannel() {
             CCPGroupChannel.get(groupChannelId: channel.getId()) { (groupChannel, error) in
-                groupChannel?.sendAttachment(file: data, fileName: fileName, fileType: fileType, uploadProgressHandler: uploadProgressHandler, completionHandler: { (message, error) in
-                
+                groupChannel?.sendAttachment(attachment: data, fileName: fileName, fileType: fileType, uploadProgressHandler: uploadProgressHandler, completionHandler: { (message, error) in
                     print("final attachment response: \(message) with error: \(error)")
                     completionHandler(message, error)
                 })
             }
         } else if channel.isOpenChannel() {
             CCPOpenChannel.get(openChannelId: channel.getId()) { (openChannel, error) in
-                openChannel?.sendAttachment(file: data, fileName: fileName, fileType: fileType, uploadProgressHandler: uploadProgressHandler, completionHandler: { (message, error) in
+                openChannel?.sendAttachment(attachment: data, fileName: fileName, fileType: fileType, uploadProgressHandler: uploadProgressHandler, completionHandler: { (message, error) in
                     print("final attachment response: \(message) with error: \(error)")
                     completionHandler(message, error)
                 })

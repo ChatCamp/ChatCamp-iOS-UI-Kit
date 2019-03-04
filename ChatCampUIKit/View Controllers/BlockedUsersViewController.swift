@@ -68,7 +68,7 @@ open class BlockedUsersViewController: UITableViewController {
         progressHud.label.text = "Loading..."
         progressHud.contentColor = .black
         loadingUsers = true
-        usersQuery.load(limit: limit) { [unowned self] (users, error) in
+        usersQuery.load() { [unowned self] (users, error) in
             progressHud.hide(animated: true)
             if error == nil {
                 if users?.count == 0 && self.users.count == 0 {
@@ -105,7 +105,7 @@ open class BlockedUsersViewController: UITableViewController {
         progressHud.label.text = "Loading..."
         progressHud.contentColor = .black
         loadingUsers = true
-        usersQuery.load(limit: usersToFetch) { [unowned self] (users, error) in
+        usersQuery.load() { [unowned self] (users, error) in
             progressHud.hide(animated: true)
             if error == nil {
                 if users?.count == 0 {
