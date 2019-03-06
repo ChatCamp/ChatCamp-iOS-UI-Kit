@@ -158,19 +158,19 @@ extension OpenChannelsViewController {
 
 // MARK:- UITableViewDelegate
 extension OpenChannelsViewController {
+    
     override open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let userID = CCPClient.getCurrentUser().getId()
-        let username = CCPClient.getCurrentUser().getDisplayName()
-        
-        let sender = Sender(id: userID, displayName: username!)
-        let channel = channels[indexPath.row]
-        channel.join() { error in
-            if error == nil {
-                print("Channel Joined")
-                let openChannelChatViewController = OpenChannelChatViewController(channel: channel, sender: sender)
-                self.navigationController?.pushViewController(openChannelChatViewController, animated: true)
-            } else {
-                self.showAlert(title: "Error!", message: "Unable to join this open channel. Please try again.", actionText: "Ok")
+        if let userID = CCPClient.getCurrentUser().getId(), let username = CCPClient.getCurrentUser().getDisplayName() {
+            let sender = Sender(id: userID, displayName: username)
+            let channel = channels[indexPath.row]
+            channel.join() { error in
+                if error == nil {
+                    print("Channel Joined")
+                    let openChannelChatViewController = OpenChannelChatViewController(channel: channel, sender: sender)
+                    self.navigationController?.pushViewController(openChannelChatViewController, animated: true)
+                } else {
+                    self.showAlert(title: "Error!", message: "Unable to join this open channel. Please try again.", actionText: "Ok")
+                }
             }
         }
         

@@ -298,7 +298,7 @@ extension ChatViewController: CCPChannelDelegate {
                     if messagesCollectionView.indexPathsForVisibleItems.contains([mkMessages.count - 1, 0]) {
                         self.messagesCollectionView.scrollToBottom(animated: true)
                     }
-                    if message.getUser().getId() == self.sender.id {
+                    if message.getUser()?.getId() == self.sender.id {
                         self.messagesCollectionView.scrollToBottom(animated: true)
                     }
                 }
@@ -323,9 +323,9 @@ extension ChatViewController: CCPChannelDelegate {
     
     public func onTypingStatusChanged(groupChannel: CCPGroupChannel) {
         if channel.getId() == self.channel.getId() {
-            if let p = groupChannel.getTypingParticipants().first {
-                if p.getId() != self.sender.id {
-                    let sender = Sender(id: p.getId(), displayName: p.getDisplayName()!)
+            if let participant = groupChannel.getTypingParticipants().first, let participantId = participant.getId(), let participantDisplayName = participant.getDisplayName() {
+                if participantId != self.sender.id {
+                    let sender = Sender(id: participantId, displayName: participantDisplayName)
                     self.showLoadingDots(sender: sender)
                 }
             }
@@ -1169,10 +1169,10 @@ extension ChatViewController: MessagesDisplayDelegate {
         }
         else {
             let ccpMessage = self.messages[indexPath.section]
-            if let avatarUrl = ccpMessage.getUser().getAvatarUrl() {
+            if let avatarUrl = ccpMessage.getUser()?.getAvatarUrl() {
                 avatarView.sd_setImage(with: URL(string: avatarUrl), completed: nil)
             } else {
-                avatarView.setImageForName(string: ccpMessage.getUser().getDisplayName() ?? "?", circular: true, textAttributes: nil)
+                avatarView.setImageForName(string: ccpMessage.getUser()?.getDisplayName() ?? "?", circular: true, textAttributes: nil)
             }
         }
     }

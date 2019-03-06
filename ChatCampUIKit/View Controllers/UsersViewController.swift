@@ -200,20 +200,19 @@ extension UsersViewController {
 // MARK:- UITableViewDelegate
 extension UsersViewController {
     override open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let user = users[indexPath.row]
-        let userID = CCPClient.getCurrentUser().getId()
-        let username = CCPClient.getCurrentUser().getDisplayName()
-        
-        let sender = Sender(id: userID, displayName: username!)
-        
-        CCPGroupChannel.create(name: user.getDisplayName() ?? "", userIds: [userID, user.getId()], isDistinct: true) { groupChannel, error in
-            if error == nil {
-                let chatViewController = ChatViewController(channel: groupChannel!, sender: sender)
-                self.navigationController?.pushViewController(chatViewController, animated: true)
-            } else {
-                self.showAlert(title: "Error!", message: "Some error occured, please try again.", actionText: "OK")
+        let selectedUser = users[indexPath.row]
+        if let currentUserId = CCPClient.getCurrentUser().getId(), let username = CCPClient.getCurrentUser().getDisplayName(), let selectedUserId = selectedUser.getId() {
+            let sender = Sender(id: currentUserId, displayName: username)
+            CCPGroupChannel.create(name: selectedUser.getDisplayName() ?? "", userIds: [currentUserId, selectedUserId], isDistinct: true) { groupChannel, error in
+                if error == nil {
+                    let chatViewController = ChatViewController(channel: groupChannel!, sender: sender)
+                    self.navigationController?.pushViewController(chatViewController, animated: true)
+                } else {
+                    self.showAlert(title: "Error!", message: "Some error occured, please try again.", actionText: "OK")
+                }
             }
         }
+        
         tableView.deselectRow(at: indexPath, animated: true)
     }
 }

@@ -255,10 +255,10 @@ extension OpenChannelChatViewController: MessagesDisplayDelegate {
     
     public func configureAvatarView(_ avatarView: AvatarView, for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) {
         let ccpMessage = self.messages[indexPath.section]
-        if let avatarUrl = ccpMessage.getUser().getAvatarUrl() {
+        if let avatarUrl = ccpMessage.getUser()?.getAvatarUrl() {
             avatarView.sd_setImage(with: URL(string: avatarUrl), completed: nil)
         } else {
-            avatarView.setImageForName(string: ccpMessage.getUser().getDisplayName() ?? "?", circular: true, textAttributes: nil)
+            avatarView.setImageForName(string: ccpMessage.getUser()?.getDisplayName() ?? "?", circular: true, textAttributes: nil)
         }
     }
     
@@ -353,7 +353,7 @@ extension OpenChannelChatViewController: CCPChannelDelegate {
             if messagesCollectionView.indexPathsForVisibleItems.contains([mkMessages.count - 1, 0]) {
                 messagesCollectionView.scrollToBottom(animated: true)
             }
-            if message.getUser().getId() == self.sender.id {
+            if message.getUser()?.getId() == self.sender.id {
                 self.messagesCollectionView.scrollToBottom(animated: true)
             }
         }

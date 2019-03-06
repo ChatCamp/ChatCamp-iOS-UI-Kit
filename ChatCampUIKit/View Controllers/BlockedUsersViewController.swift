@@ -168,13 +168,15 @@ extension BlockedUsersViewController {
     override open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let user = users[indexPath.row]
         let progressHud = MBProgressHUD.showAdded(to: self.view, animated: true)
-        CCPClient.unblockUser(userId: user.getId()) { (participant, error) in
-            progressHud.hide(animated: true)
-            if error == nil {
-                self.users.remove(at: indexPath.row)
-                tableView.reloadData()
-                if self.users.count == 0 {
-                    self.addNoRecordLabel()
+        if let userId = user.getId() {
+            CCPClient.unblockUser(userId: userId) { (participant, error) in
+                progressHud.hide(animated: true)
+                if error == nil {
+                    self.users.remove(at: indexPath.row)
+                    tableView.reloadData()
+                    if self.users.count == 0 {
+                        self.addNoRecordLabel()
+                    }
                 }
             }
         }

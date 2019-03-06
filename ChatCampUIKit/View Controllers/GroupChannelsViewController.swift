@@ -195,7 +195,7 @@ extension GroupChannelsViewController {
         } else {
             cell.unreadCountLabel.isHidden = true
         }
-        if let message = channel.getLastMessage(), let displayName = channel.getLastMessage()?.getUser().getDisplayName() {
+        if let message = channel.getLastMessage(), let displayName = channel.getLastMessage()?.getUser()?.getDisplayName() {
             if message.getType() == "text" {
                 cell.messageLabel.text =  displayName + ": " + message.getText()
             } else {
@@ -214,13 +214,12 @@ extension GroupChannelsViewController {
 // MARK:- UITableViewDelegate
 extension GroupChannelsViewController {
     override open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let userID = CCPClient.getCurrentUser().getId()
-        let username = CCPClient.getCurrentUser().getDisplayName()
-        
-        let sender = Sender(id: userID, displayName: username!)
-        
-        let chatViewController = ChatViewController(channel: channels[indexPath.row], sender: sender)
-        navigationController?.pushViewController(chatViewController, animated: true)
+        if let userID = CCPClient.getCurrentUser().getId(), let username = CCPClient.getCurrentUser().getDisplayName() {
+            let sender = Sender(id: userID, displayName: username)
+            let chatViewController = ChatViewController(channel: channels[indexPath.row], sender: sender)
+            
+            navigationController?.pushViewController(chatViewController, animated: true)
+        }
         tableView.deselectRow(at: indexPath, animated: true)
     }
 }

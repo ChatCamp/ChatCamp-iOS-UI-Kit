@@ -24,7 +24,7 @@ class ParticipantViewModelItem {
         return user.getAvatarUrl()
     }
     
-    var userId: String {
+    var userId: String? {
         return user.getId()
     }
     

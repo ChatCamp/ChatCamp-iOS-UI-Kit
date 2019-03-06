@@ -84,8 +84,10 @@ class CreateChannelViewController: UIViewController {
         creatButton.title = "Add"
         channelNameTextFieldHightConstraint.constant = 0
         guard let groupChannel = channel else { return }
-        for paticipant in groupChannel.getParticipants() {
-            existingParticipantsIds.append(paticipant.getId())
+        for participant in groupChannel.getParticipants() {
+            if let participantId = participant.getId() {
+                existingParticipantsIds.append(participantId)
+            }
         }
     }
     
@@ -185,15 +187,16 @@ class CreateChannelViewController: UIViewController {
     
     @IBAction func didTapOnCreate(_ sender: UIBarButtonItem) {
         if isAddingParticipants {
-            let participants = viewModel.selectedItems.map { $0.userId }
-            guard let groupChannel = channel else { return }
-            groupChannel.inviteParticipants(participantIds: participants) { error in
-                if error == nil {
-                    self.dismiss(animated: true, completion: {
-                        self.participantsAdded?()
-                    })
-                } else {
-                    self.showAlert(title: "Error!", message: "Some error occured, please try again.", actionText: "OK")
+            if let participantIds = (viewModel.selectedItems.map { $0.userId }) as? [String] {
+                guard let groupChannel = channel else { return }
+                groupChannel.inviteParticipants(participantIds: participantIds) { error in
+                    if error == nil {
+                        self.dismiss(animated: true, completion: {
+                            self.participantsAdded?()
+                        })
+                    } else {
+                        self.showAlert(title: "Error!", message: "Some error occured, please try again.", actionText: "OK")
+                    }
                 }
             }
         } else {
@@ -212,14 +215,18 @@ class CreateChannelViewController: UIViewController {
                 return
             }
             
-            CCPGroupChannel.create(name: channelName, userIds: viewModel.selectedItems.map { $0.userId }, isDistinct: false) { groupChannel, error in
-                if error == nil, let channel = groupChannel {
-                    self.dismiss(animated: false, completion: {
-                        let sender = Sender(id: CCPClient.getCurrentUser().getId(), displayName: CCPClient.getCurrentUser().getDisplayName() ?? "")
-                        self.channelCreated?(channel, sender)
-                    })
-                } else {
-                    self.showAlert(title: "Error!", message: "Some error occured, please try again.", actionText: "OK")
+            if let selectedUserIds = (viewModel.selectedItems.map { $0.userId }) as? [String] {
+                CCPGroupChannel.create(name: channelName, userIds: selectedUserIds, isDistinct: false) { groupChannel, error in
+                    if error == nil, let channel = groupChannel {
+                        self.dismiss(animated: false, completion: {
+                            if let userId = CCPClient.getCurrentUser().getId(), let displayName = CCPClient.getCurrentUser().getDisplayName() {
+                                let sender = Sender(id: userId, displayName: displayName)
+                                self.channelCreated?(channel, sender)
+                            }
+                        })
+                    } else {
+                        self.showAlert(title: "Error!", message: "Some error occured, please try again.", actionText: "OK")
+                    }
                 }
             }
         }
