@@ -13,6 +13,8 @@ import DKImagePickerController
 import Photos
 import MobileCoreServices
 import AVFoundation
+import MessageKit
+import MessageInputBar
 
 open class OpenChannelChatViewController: MessagesViewController {
     
@@ -108,19 +110,23 @@ open class OpenChannelChatViewController: MessagesViewController {
 
 // MARK:- MessagesDataSource
 extension OpenChannelChatViewController: MessagesDataSource {
+    public func numberOfSections(in messagesCollectionView: MessagesCollectionView) -> Int {
+        return mkMessages.count
+    }
+    
     public func currentSender() -> Sender {
         return sender
     }
     
-    public func numberOfMessages(in messagesCollectionView: MessagesCollectionView) -> Int {
-        return mkMessages.count
-    }
+//    public func numberOfMessages(in messagesCollectionView: MessagesCollectionView) -> Int {
+//        return mkMessages.count
+//    }
     
     public func messageForItem(at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> MessageType {
         return mkMessages[indexPath.section]
     }
     
-    public func cellBottomLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
+    public func messageBottomLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "HH:mm"
         let date = dateFormatter.string(from: message.sentDate)
@@ -131,12 +137,12 @@ extension OpenChannelChatViewController: MessagesDataSource {
         return attributedString
     }
     
-    public func cellBottomLabelAlignment(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> LabelAlignment {
-        guard let dataSource = messagesCollectionView.messagesDataSource else {
-            fatalError(MessageKitError.nilMessagesDataSource)
-        }
-        return dataSource.isFromCurrentSender(message: message) ? .messageTrailing(.zero) : .messageLeading(.zero)
-    }
+//    public func cellBottomLabelAlignment(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> LabelAlignment {
+//        guard let dataSource = messagesCollectionView.messagesDataSource else {
+//            fatalError("MessagesDataSource has not been set.")
+//        }
+//        return dataSource.isFromCurrentSender(message: message) ? .messageTrailing(.zero) : .messageLeading(.zero)
+//    }
     
     public func cellTopLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
         let senderName = message.sender.displayName
@@ -150,41 +156,41 @@ extension OpenChannelChatViewController: MessagesDataSource {
 
 // MARK:- MessagesLayoutDelegate
 extension OpenChannelChatViewController: MessagesLayoutDelegate {
-    public func heightForLocation(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
-        return 0
-    }
-    
-    public func widthForMedia(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
-        return view.bounds.width / 2
-    }
-    
-    public func heightForMedia(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
-        
-        switch message.data {
-        case .photo(let image):
-            let height = image.size.height * view.bounds.width / (2 * image.size.width)
-            
-            return height
-        default:
-            return view.bounds.width / 2
-        }
-    }
-    
-    public func widthForImageInCustom(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
-        return view.bounds.width / 2
-    }
-    
-    public func heightForImageInCustom(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
-        switch message.data {
-        case .custom(let metadata):
-            let image = metadata["Image"] as! UIImage
-            let height = image.size.height * view.bounds.width / (2 * image.size.width)
-            
-            return height
-        default:
-            return view.bounds.width / 2
-        }
-    }
+//    public func heightForLocation(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
+//        return 0
+//    }
+//    
+//    public func widthForMedia(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
+//        return view.bounds.width / 2
+//    }
+//    
+//    public func heightForMedia(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
+//        
+//        switch message.kind {
+//        case .photo(let image):
+//            let height = image.size.height * view.bounds.width / (2 * image.size.width)
+//            
+//            return height
+//        default:
+//            return view.bounds.width / 2
+//        }
+//    }
+//    
+//    public func widthForImageInCustom(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
+//        return view.bounds.width / 2
+//    }
+//    
+//    public func heightForImageInCustom(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
+//        switch message.data {
+//        case .custom(let metadata):
+//            let image = metadata["Image"] as! UIImage
+//            let height = image.size.height * view.bounds.width / (2 * image.size.width)
+//            
+//            return height
+//        default:
+//            return view.bounds.width / 2
+//        }
+//    }
 }
 
 // MARK:- MessagesDisplayDelegate
@@ -192,7 +198,7 @@ extension OpenChannelChatViewController: MessagesDisplayDelegate {
     public func messageStyle(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> MessageStyle {
         let message = mkMessages[indexPath.section]
         
-        switch message.data {
+        switch message.kind {
         case .photo(_):
             let configurationClosure = { (containerView: UIImageView) in
                 let imageMask = UIImageView()
@@ -202,52 +208,54 @@ extension OpenChannelChatViewController: MessagesDisplayDelegate {
                 containerView.contentMode = .scaleAspectFill
             }
             return .custom(configurationClosure)
-        case .custom(let metadata):
-            let configurationClosure = { (containerView: UIImageView) in
-                
-                containerView.layer.cornerRadius = 4
-                containerView.layer.masksToBounds = true
-                containerView.layer.borderWidth = 1
-                containerView.layer.borderColor = UIColor.lightGray.cgColor
-                
-                let customView = CustomMessageContentView().loadFromNib() as! CustomMessageContentView
-                
-                customView.nameLabel.text = metadata["Name"] as? String
-                customView.codeLabel.text = metadata["Code"] as? String
-                customView.descriptionLabel.text = metadata["ShortDescription"] as? String
-                customView.shippingLabel.text = metadata["ShippingCost"] as? String
-                customView.imageView.image = metadata["Image"] as? UIImage
-                
-                containerView.addSubview(customView)
-                customView.fillSuperview()
-            }
-            return .custom(configurationClosure)
-        case .document(let url):
-            let configurationClosure = { (containerView: UIImageView) in
-                containerView.layer.cornerRadius = 4
-                containerView.layer.masksToBounds = true
-                containerView.layer.borderWidth = 1
-                containerView.layer.borderColor = UIColor.lightGray.cgColor
-                
-                let documentView = DocumentView().loadFromNib() as! DocumentView
-                documentView.documentNameLabel.text = url.lastPathComponent
-                containerView.addSubview(documentView)
-                documentView.fillSuperview()
-            }
-            return .document(configurationClosure)
-        case .audio(let url):
-            let configurationClosure = { (containerView: UIImageView) in
-                containerView.layer.cornerRadius = 4
-                containerView.layer.masksToBounds = true
-                containerView.layer.borderWidth = 1
-                containerView.layer.borderColor = UIColor.lightGray.cgColor
-                
-                let audioView = AudioView().loadFromNib() as! AudioView
-                audioView.audioFileURL = url
-                containerView.addSubview(audioView)
-                audioView.fillSuperview()
-            }
-            return .audio(configurationClosure)
+            
+            // TODO:
+//        case .custom(let metadata):
+//            let configurationClosure = { (containerView: UIImageView) in
+//
+//                containerView.layer.cornerRadius = 4
+//                containerView.layer.masksToBounds = true
+//                containerView.layer.borderWidth = 1
+//                containerView.layer.borderColor = UIColor.lightGray.cgColor
+//
+//                let customView = CustomMessageContentView().loadFromNib() as! CustomMessageContentView
+//
+//                customView.nameLabel.text = metadata["Name"] as? String
+//                customView.codeLabel.text = metadata["Code"] as? String
+//                customView.descriptionLabel.text = metadata["ShortDescription"] as? String
+//                customView.shippingLabel.text = metadata["ShippingCost"] as? String
+//                customView.imageView.image = metadata["Image"] as? UIImage
+//
+//                containerView.addSubview(customView)
+//                customView.fillSuperview()
+//            }
+//            return .custom(configurationClosure)
+//        case .document(let url):
+//            let configurationClosure = { (containerView: UIImageView) in
+//                containerView.layer.cornerRadius = 4
+//                containerView.layer.masksToBounds = true
+//                containerView.layer.borderWidth = 1
+//                containerView.layer.borderColor = UIColor.lightGray.cgColor
+//
+//                let documentView = DocumentView().loadFromNib() as! DocumentView
+//                documentView.documentNameLabel.text = url.lastPathComponent
+//                containerView.addSubview(documentView)
+//                documentView.fillSuperview()
+//            }
+//            return .document(configurationClosure)
+//        case .audio(let url):
+//            let configurationClosure = { (containerView: UIImageView) in
+//                containerView.layer.cornerRadius = 4
+//                containerView.layer.masksToBounds = true
+//                containerView.layer.borderWidth = 1
+//                containerView.layer.borderColor = UIColor.lightGray.cgColor
+//
+//                let audioView = AudioView().loadFromNib() as! AudioView
+//                audioView.audioFileURL = url
+//                containerView.addSubview(audioView)
+//                audioView.fillSuperview()
+//            }
+//            return .audio(configurationClosure)
         default:
             return .bubble
         }
@@ -273,30 +281,36 @@ extension OpenChannelChatViewController: MessageCellDelegate {
         let indexPath = messagesCollectionView.indexPath(for: cell)!
         let message = mkMessages[indexPath.section]
         
-        switch message.data {
-        case .custom(let metadata):
-            let link = metadata["ImageURL"] as! String
-            let safariViewController = SFSafariViewController(url: URL(string: link)!)
-            present(safariViewController, animated: true, completion: nil)
-        case .video(let videoURL, _):
-            let videoViewController = VideoViewController(videoURL: videoURL)
-            self.present(videoViewController, animated: true, completion: nil)
-        case .photo(let image):
-            let imagePreviewViewController = UIViewController.imagePreviewViewController()
-            imagePreviewViewController.image = image
-            navigationController?.pushViewController(imagePreviewViewController, animated: true)
-        case .document(let url):
-            if url.isFileURL {
-                let documentInteractionController = UIDocumentInteractionController(url: url)
-                documentInteractionController.delegate = self
-                documentInteractionController.presentPreview(animated: true)
-            } else {
-                showAlert(title: "Download in progress!", message: "Document is not fully donwloded.", actionText: "OK")
+        switch message.kind {
+            //TODO :
+//        case .custom(let metadata):
+//            let link = metadata["ImageURL"] as! String
+//            let safariViewController = SFSafariViewController(url: URL(string: link)!)
+//            present(safariViewController, animated: true, completion: nil)
+        case .video(let mediaItem):
+            if let url = mediaItem.url {
+                let videoViewController = VideoViewController(videoURL: url)
+                self.present(videoViewController, animated: true, completion: nil)
             }
-        case .audio(let audioURL):
-            if let audioView = (cell.messageContainerView.subviews.first) as? AudioView {
-                audioView.playAudio(audioURL)
+        case .photo(let mediaItem):
+            if let image = mediaItem.image {
+                let imagePreviewViewController = UIViewController.imagePreviewViewController()
+                imagePreviewViewController.image = image
+                navigationController?.pushViewController(imagePreviewViewController, animated: true)
             }
+            // TODO:
+//        case .document(let url):
+//            if url.isFileURL {
+//                let documentInteractionController = UIDocumentInteractionController(url: url)
+//                documentInteractionController.delegate = self
+//                documentInteractionController.presentPreview(animated: true)
+//            } else {
+//                showAlert(title: "Download in progress!", message: "Document is not fully donwloded.", actionText: "OK")
+//            }
+//        case .audio(let audioURL):
+//            if let audioView = (cell.messageContainerView.subviews.first) as? AudioView {
+//                audioView.playAudio(audioURL)
+//            }
         default:
             break
         }
@@ -516,14 +530,14 @@ extension OpenChannelChatViewController {
         navigationItem.leftItemsSupplementBackButton = true
         let channelNameBarButtonItem = UIBarButtonItem(title: channel.getName(), style: .plain, target: self, action: #selector(channelProfileButtonTapped))
         
-        let imageView = UIImageView.init(frame: CGRect.init(x: 0, y: 0, width: 35, height: 35))
+        let imageView = UIImageView.init(frame: CGRect(x: 0, y: 0, width: 35, height: 35))
         let profileButton = UIButton()
-        profileButton.frame = CGRect(0, 0, 35, 35)
+        profileButton.frame = CGRect(x: 0, y: 0, width: 35, height: 35)
         if let avatarUrl = channel.getAvatarUrl() {
             imageView.sd_setImage(with: URL(string: avatarUrl), completed: nil)
             if let image = imageView.image {
                 UIGraphicsBeginImageContextWithOptions(profileButton.frame.size, false, image.scale)
-                let rect  = CGRect(0, 0, profileButton.frame.size.width, profileButton.frame.size.height)
+                let rect  = CGRect(x:0, y:0, width: profileButton.frame.size.width, height: profileButton.frame.size.height)
                 UIBezierPath(roundedRect: rect, cornerRadius: rect.width/2).addClip()
                 image.draw(in: rect)
                 

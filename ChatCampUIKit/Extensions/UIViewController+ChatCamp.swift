@@ -8,6 +8,7 @@
 
 import UIKit
 import ChatCamp
+import MessageKit
 
 extension UIViewController {
 //    static func loginViewController() -> LoginViewController {

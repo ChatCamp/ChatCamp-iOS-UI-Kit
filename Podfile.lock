@@ -1,5 +1,4 @@
 PODS:
-  - Alamofire (4.7.3)
   - ChatCamp (4.2.4)
   - CLImageEditor (0.2.0):
     - CLImageEditor/Core (= 0.2.0)
@@ -50,26 +49,30 @@ PODS:
     - SDWebImage/GIF
   - FLAnimatedImage (1.0.12)
   - MBProgressHUD (1.1.0)
+  - MessageInputBar/Core (0.4.1)
+  - MessageKit (2.0.0):
+    - MessageInputBar/Core
   - SDWebImage/Core (4.4.2)
   - SDWebImage/GIF (4.4.2):
     - FLAnimatedImage (~> 1.0)
     - SDWebImage/Core
 
 DEPENDENCIES:
-  - Alamofire (~> 4.7)
   - ChatCamp (from `/Users/saurabh/Desktop/Developer/chatcamp/iflychat-ios-sdk`)
   - DKImagePickerController
   - MBProgressHUD
+  - MessageKit
 
 SPEC REPOS:
   https://github.com/cocoapods/specs.git:
-    - Alamofire
     - CLImageEditor
     - DKCamera
     - DKImagePickerController
     - DKPhotoGallery
     - FLAnimatedImage
     - MBProgressHUD
+    - MessageInputBar
+    - MessageKit
     - SDWebImage
 
 EXTERNAL SOURCES:
@@ -77,7 +80,6 @@ EXTERNAL SOURCES:
     :path: "/Users/saurabh/Desktop/Developer/chatcamp/iflychat-ios-sdk"
 
 SPEC CHECKSUMS:
-  Alamofire: c7287b6e5d7da964a70935e5db17046b7fde6568
   ChatCamp: e658eb937ae3e7ccffdd19f7a36561571e289c55
   CLImageEditor: ec5ae50b3a54c9818c0bdb243b20665a1c6718e3
   DKCamera: c25552afb4bc3ef4c7966b16a44352d36475fe5d
@@ -85,8 +87,10 @@ SPEC CHECKSUMS:
   DKPhotoGallery: d2ee578ee1ae92f3350de9ebc5e2fb5762a76626
   FLAnimatedImage: 4a0b56255d9b05f18b6dd7ee06871be5d3b89e31
   MBProgressHUD: e7baa36a220447d8aeb12769bf0585582f3866d9
+  MessageInputBar: e81c7535347f1f7b923de7080409a535a004b6e4
+  MessageKit: 29c1c87e5a396d2ca7a3f712e5171dc9aba42a1e
   SDWebImage: 624d6e296c69b244bcede364c72ae0430ac14681
 
-PODFILE CHECKSUM: 207b683935ae8c5a93af1fc6ed01031acaf0d55a
+PODFILE CHECKSUM: 4341a195a8b1337dd493d9d1556a1c170114ecb0
 
 COCOAPODS: 1.5.3

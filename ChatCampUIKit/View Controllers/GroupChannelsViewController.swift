@@ -9,6 +9,7 @@
 import UIKit
 import ChatCamp
 import SDWebImage
+import MessageKit
 
 open class GroupChannelsViewController: UITableViewController {
     

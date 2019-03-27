@@ -9,24 +9,56 @@
 import Foundation
 import ChatCamp
 import Photos
+import MessageKit
 
 protocol MessageImageDelegate: NSObjectProtocol {
     func messageDidUpdateWithImage(message: Message)
+}
+
+private struct ImageMediaItem: MediaItem {
+    
+    var url: URL?
+    var image: UIImage?
+    var placeholderImage: UIImage
+    var size: CGSize
+    
+    init(image: UIImage) {
+        self.image = image
+        self.size = CGSize(width: 240, height: 240)
+        self.placeholderImage = UIImage()
+    }
+    
+}
+
+private struct VideoMediaItem: MediaItem {
+    
+    var url: URL?
+    var image: UIImage?
+    var placeholderImage: UIImage
+    var size: CGSize
+    
+    init(url: URL, thumbnail: UIImage) {
+        self.url = url
+        self.image = thumbnail
+        self.size = CGSize(width: 240, height: 240)
+        self.placeholderImage = UIImage()
+    }
+    
 }
 
 class Message: NSObject, MessageType {
     let sender: Sender
     var messageId: String
     var sentDate: Date
-    var data: MessageData
+    var kind: MessageKind
     
     weak var delegate: MessageImageDelegate?
     
-    init(senderOfMessage: Sender, IDOfMessage: String, sentDate date: Date, messageData: MessageData) {
+    init(senderOfMessage: Sender, IDOfMessage: String, sentDate date: Date, kind: MessageKind) {
         sender = senderOfMessage
         messageId = IDOfMessage
         sentDate = date
-        data = messageData
+        self.kind = kind
     }
     
     init(fromCCPMessage ccpMessage: CCPMessage) {
@@ -43,33 +75,38 @@ class Message: NSObject, MessageType {
             ]
         let attributedString = NSMutableAttributedString(string: "can't display the message", attributes: errorMessageAttributes)
         
-        data = MessageData.attributedText(attributedString)
+        kind = .attributedText(attributedString)
         
         super.init()
         
         if ccpMessage.getType() == "text" && ccpMessage.getCustomType() != "action_link" {
-            data = MessageData.text(ccpMessage.getText())
+            kind = .text(ccpMessage.getText())
         } else if ccpMessage.getType() == "attachment" {
             if ccpMessage.getAttachment()?.isImage() ?? false {
-                data = MessageData.photo(UIImage(named: "chat_image_placeholder", in: Bundle(for: Message.self), compatibleWith: nil) ?? UIImage())
+                let mediaItem = ImageMediaItem(image: UIImage(named: "chat_image_placeholder", in: Bundle(for: Message.self), compatibleWith: nil) ?? UIImage())
+                kind = .photo(mediaItem)
 
-                
                 DispatchQueue.global().async {
                     if let attachement = ccpMessage.getAttachment(), let dataURL = URL(string: attachement.getUrl()), let imageData = try? Data(contentsOf: dataURL ) {
                         DispatchQueue.main.async {
-                            self.data = MessageData.photo(UIImage(data: imageData) ?? UIImage())
+                            let mediaItem = ImageMediaItem(image: UIImage(data: imageData) ?? UIImage())
+                            self.kind = .photo(mediaItem)
                             self.delegate?.messageDidUpdateWithImage(message: self)
                         }
                     }
                 }
             } else if ccpMessage.getAttachment()?.isVideo() ?? false {
                 if let attachement = ccpMessage.getAttachment(), let dataURL = URL(string: attachement.getUrl()) {
-                    data = MessageData.video(file: dataURL, thumbnail: UIImage(named: "chat_image_placeholder", in: Bundle(for: Message.self), compatibleWith: nil) ?? UIImage())
+                    let mediaItem = VideoMediaItem(url: dataURL, thumbnail: UIImage(named: "chat_image_placeholder", in: Bundle(for: Message.self), compatibleWith: nil) ?? UIImage())
+                    kind = .video(mediaItem)
+//                    kind = .video(file: dataURL, thumbnail: UIImage(named: "chat_image_placeholder", in: Bundle(for: Message.self), compatibleWith: nil) ?? UIImage())
                     guard let documentUrl:URL =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
                     let destinationFileUrl = documentUrl.appendingPathComponent(attachement.getName())
                     if FileManager.default.fileExists(atPath: destinationFileUrl.path) {
                         guard let thumbnail = ImageManager.getThumbnailFrom(path: destinationFileUrl) else { return }
-                        self.data = MessageData.video(file: destinationFileUrl, thumbnail: thumbnail)
+                        let mediaItem = VideoMediaItem(url: destinationFileUrl, thumbnail: thumbnail)
+                        self.kind = .video(mediaItem)
+//                        self.kind = .video(file: destinationFileUrl, thumbnail: thumbnail)
                         self.delegate?.messageDidUpdateWithImage(message: self)
                     } else {
                         let sessionConfig = URLSessionConfiguration.default
@@ -82,7 +119,9 @@ class Message: NSObject, MessageType {
                                         try FileManager.default.copyItem(at: tempLocalUrl, to: destinationFileUrl)
                                         DispatchQueue.main.async {
                                             guard let thumbnail = ImageManager.getThumbnailFrom(path: destinationFileUrl) else { return }
-                                            self.data = MessageData.video(file: destinationFileUrl, thumbnail: thumbnail)
+                                            let mediaItem = VideoMediaItem(url: destinationFileUrl, thumbnail: thumbnail)
+                                            self.kind = .video(mediaItem)
+//                                            self.kind = .video(file: destinationFileUrl, thumbnail: thumbnail)
                                             self.delegate?.messageDidUpdateWithImage(message: self)
                                         }
                                         PHPhotoLibrary.shared().performChanges({
@@ -105,69 +144,71 @@ class Message: NSObject, MessageType {
             }
             else if ccpMessage.getAttachment()?.isDocument() ?? false {
                 if let attachement = ccpMessage.getAttachment(), let dataURL = URL(string: attachement.getUrl()) {
-                    self.data = MessageData.document(dataURL)
-                        let documentUrl:URL =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first as URL!
-                        let destinationFileUrl = documentUrl.appendingPathComponent(attachement.getName())
-                        if FileManager.default.fileExists(atPath: destinationFileUrl.path) {
-                            self.data = MessageData.document(destinationFileUrl)
-                            self.delegate?.messageDidUpdateWithImage(message: self)
-                        } else {
-                            let sessionConfig = URLSessionConfiguration.default
-                            let session = URLSession(configuration: sessionConfig)
-                            let request = URLRequest(url: dataURL)
-                            DispatchQueue.global().async {
-                                session.downloadTask(with: request) { (tempLocalUrl, response, error) in
-                                    if let tempLocalUrl = tempLocalUrl, error == nil {
-                                        do {
-                                            try FileManager.default.copyItem(at: tempLocalUrl, to: destinationFileUrl)
-                                            DispatchQueue.main.async {
-                                                self.data = MessageData.document(destinationFileUrl)
-                                                self.delegate?.messageDidUpdateWithImage(message: self)
-                                            }
-                                        } catch (let writeError) {
-                                            print("Error creating a file \(destinationFileUrl) : \(writeError)")
-                                        }
-                                    } else {
-                                        print("Error took place while downloading a file. Error description: %@", error?.localizedDescription);
-                                    }
-                                }.resume()
-                            }
-                        }
+                    // TODO:
+//                    self.kind = .document(dataURL)
+//                    let documentUrl:URL =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first as URL!
+//                    let destinationFileUrl = documentUrl.appendingPathComponent(attachement.getName())
+//                    if FileManager.default.fileExists(atPath: destinationFileUrl.path) {
+//                        self.data = MessageData.document(destinationFileUrl)
+//                        self.delegate?.messageDidUpdateWithImage(message: self)
+//                    } else {
+//                        let sessionConfig = URLSessionConfiguration.default
+//                        let session = URLSession(configuration: sessionConfig)
+//                        let request = URLRequest(url: dataURL)
+//                        DispatchQueue.global().async {
+//                            session.downloadTask(with: request) { (tempLocalUrl, response, error) in
+//                                if let tempLocalUrl = tempLocalUrl, error == nil {
+//                                    do {
+//                                        try FileManager.default.copyItem(at: tempLocalUrl, to: destinationFileUrl)
+//                                        DispatchQueue.main.async {
+//                                            self.kind = .document(destinationFileUrl)
+//                                            self.delegate?.messageDidUpdateWithImage(message: self)
+//                                        }
+//                                    } catch (let writeError) {
+//                                        print("Error creating a file \(destinationFileUrl) : \(writeError)")
+//                                    }
+//                                } else {
+//                                    print("Error took place while downloading a file. Error description: %@", error?.localizedDescription);
+//                                }
+//                            }.resume()
+//                        }
+//                    }
                 }
             }
             else if ccpMessage.getAttachment()?.isAudio() ?? false {
                 if let attachment = ccpMessage.getAttachment(), let dataURL = URL(string: attachment.getUrl()) {
-                    self.data = MessageData.audio(dataURL)
-                    let documentUrl:URL =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first as URL!
-                    let destinationFileUrl = documentUrl.appendingPathComponent(dataURL.lastPathComponent)
-                    if FileManager.default.fileExists(atPath: destinationFileUrl.path) {
-                        self.data = MessageData.audio(destinationFileUrl)
-                        self.delegate?.messageDidUpdateWithImage(message: self)
-                    } else {
-                        let sessionConfig = URLSessionConfiguration.default
-                        let session = URLSession(configuration: sessionConfig)
-                        let request = URLRequest(url: dataURL)
-                        DispatchQueue.global().async {
-                            session.downloadTask(with: request) { (tempLocalUrl, response, error) in
-                                if let tempLocalUrl = tempLocalUrl, error == nil {
-                                    do {
-                                        try FileManager.default.copyItem(at: tempLocalUrl, to: destinationFileUrl)
-                                        DispatchQueue.main.async {
-                                            self.data = MessageData.audio(destinationFileUrl)
-                                            self.delegate?.messageDidUpdateWithImage(message: self)
-                                        }
-                                    } catch (let writeError) {
-                                        print("Error creating a file \(destinationFileUrl) : \(writeError)")
-                                    }
-                                } else {
-                                    print("Error took place while downloading a file. Error description: %@", error?.localizedDescription);
-                                }
-                                }.resume()
-                        }
-                    }
+                    // TODO:
+//                    self.kind = .audio(dataURL)
+//                    let documentUrl:URL =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first as URL!
+//                    let destinationFileUrl = documentUrl.appendingPathComponent(dataURL.lastPathComponent)
+//                    if FileManager.default.fileExists(atPath: destinationFileUrl.path) {
+//                        self.kind = .audio(destinationFileUrl)
+//                        self.delegate?.messageDidUpdateWithImage(message: self)
+//                    } else {
+//                        let sessionConfig = URLSessionConfiguration.default
+//                        let session = URLSession(configuration: sessionConfig)
+//                        let request = URLRequest(url: dataURL)
+//                        DispatchQueue.global().async {
+//                            session.downloadTask(with: request) { (tempLocalUrl, response, error) in
+//                                if let tempLocalUrl = tempLocalUrl, error == nil {
+//                                    do {
+//                                        try FileManager.default.copyItem(at: tempLocalUrl, to: destinationFileUrl)
+//                                        DispatchQueue.main.async {
+//                                            self.kind = .audio(destinationFileUrl)
+//                                            self.delegate?.messageDidUpdateWithImage(message: self)
+//                                        }
+//                                    } catch (let writeError) {
+//                                        print("Error creating a file \(destinationFileUrl) : \(writeError)")
+//                                    }
+//                                } else {
+//                                    print("Error took place while downloading a file. Error description: %@", error?.localizedDescription);
+//                                }
+//                                }.resume()
+//                        }
+//                    }
                 }
             } else {
-                data = MessageData.text(ccpMessage.getAttachment()!.getUrl())
+                kind = .text(ccpMessage.getAttachment()!.getUrl())
             }
         } else if ccpMessage.getType() == "text" && ccpMessage.getCustomType() == "action_link" {
             let metadata = ccpMessage.getMetadata()
@@ -209,7 +250,7 @@ class Message: NSObject, MessageType {
                 "Image": UIImage(named: "chat_image_placeholder", in: Bundle(for: Message.self), compatibleWith: nil) ?? UIImage()
             ]
             
-            data = MessageData.custom(messageDataDictionary)
+            kind = .custom(messageDataDictionary)
             
             URLSession.shared.dataTask(with: URL(string: imageURL)!) { data, response, error in
                 guard
@@ -220,7 +261,7 @@ class Message: NSObject, MessageType {
                     else { return }
                 DispatchQueue.main.async {
                     messageDataDictionary["Image"] = image
-                    self.data = MessageData.custom(messageDataDictionary)
+                    self.kind = .custom(messageDataDictionary)
                     self.delegate?.messageDidUpdateWithImage(message: self)
                 }
             }.resume()

@@ -10,6 +10,7 @@ import UIKit
 import ChatCamp
 import SDWebImage
 import MBProgressHUD
+import MessageKit
 
 open class OpenChannelsViewController: UITableViewController {
     

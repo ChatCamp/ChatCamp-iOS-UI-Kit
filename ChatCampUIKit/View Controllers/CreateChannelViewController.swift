@@ -11,6 +11,7 @@ import Foundation
 import UIKit
 import ChatCamp
 import MBProgressHUD
+import MessageKit
 
 class CreateChannelViewController: UIViewController {
     

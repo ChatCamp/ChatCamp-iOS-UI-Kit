@@ -9,7 +9,6 @@
 import Foundation
 import UIKit
 import ChatCamp
-import Alamofire
 import Photos
 
 class AttachmentManager {

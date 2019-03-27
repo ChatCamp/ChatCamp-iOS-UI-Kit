@@ -18,8 +18,8 @@ s.dependency 'ChatCamp', '~> 4.2'
 s.dependency 'DKImagePickerController'
 s.dependency 'DKCamera'
 s.dependency 'DKPhotoGallery'
-s.dependency 'Alamofire', '~> 4.7'
 s.dependency 'MBProgressHUD'
+s.dependency 'MessageKit'
 
 
 s.source_files = "ChatCampUIKit/**/*.{swift}"
