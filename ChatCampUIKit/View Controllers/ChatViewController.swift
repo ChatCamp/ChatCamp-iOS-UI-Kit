@@ -542,7 +542,7 @@ extension ChatViewController {
             let attachmentButton = InputBarButtonItem(frame: CGRect(x: 40, y: 0, width: 30, height: 30))
             attachmentButton.setImage(UIImage(named: "attachment", in: Bundle(for: ChatViewController.self), compatibleWith: nil), for: .normal)
             attachmentButton.onTouchUpInside { [unowned self] attachmentButton in
-                if self.channel.getParticipantsCount() == 2 && self.participant?.isParticipantBlockedByMe() ?? false {
+                if self.channel.getParticipantsCount() == 2 && self.participant?.ifBlockedByMe() ?? false {
                     self.presentUserBlockedAlert()
                 } else {
                     self.presentAlertController()
@@ -555,7 +555,7 @@ extension ChatViewController {
             let audioButton = InputBarButtonItem(frame: CGRect(x: 0, y: 0, width: 30, height: 30))
             audioButton.setImage(UIImage(named: "microphone", in: Bundle(for: ChatViewController.self), compatibleWith: nil), for: .normal)
             audioButton.onTouchUpInside { [unowned self] audioButton in
-                if self.channel.getParticipantsCount() == 2 && self.participant?.isParticipantBlockedByMe() ?? false {
+                if self.channel.getParticipantsCount() == 2 && self.participant?.ifBlockedByMe() ?? false {
                     self.presentUserBlockedAlert()
                 } else {
                     self.handleAudioMessageAction(audioButton: audioButton)
@@ -905,7 +905,7 @@ extension ChatViewController: UIDocumentMenuDelegate, UIDocumentPickerDelegate {
 // MARK:- MessageInputBarDelegate
 extension ChatViewController: MessageInputBarDelegate {
     public func messageInputBar(_ inputBar: MessageInputBar, didPressSendButtonWith text: String) {
-        if channel.getParticipants().count == 2 && participant?.isParticipantBlockedByMe() ?? false {
+        if channel.getParticipants().count == 2 && participant?.ifBlockedByMe() ?? false {
             self.presentUserBlockedAlert()
         } else {
             channel.stopTyping()

@@ -104,7 +104,7 @@ extension SQLiteDatabase {
     func insertChat(channel: CCPBaseChannel, message: CCPMessage) throws {
         let chat = Chat(
             messageId: message.getId() as NSString,
-            channelType: (channel.isGroupChannel() ? "group" : "open") as NSString,
+            channelType: (channel.ifGroupChannel() ? "group" : "open") as NSString,
             channelId: channel.getId() as NSString,
             timestamp: Int32(message.getInsertedAt()),
             data: message.serialize() as! NSString)
@@ -216,7 +216,7 @@ extension SQLiteDatabase {
     }
     
     func chat(channel: CCPBaseChannel) -> [CCPMessage]? {
-        let channelType = (channel.isGroupChannel() ? "group" : "open")
+        let channelType = (channel.ifGroupChannel() ? "group" : "open")
         let channelId = channel.getId()
         let querySql = "SELECT * FROM Chat WHERE channelType = '\(channelType)' AND channelId = '\(channelId)' ORDER BY timestamp DESC LIMIT 30;"
         

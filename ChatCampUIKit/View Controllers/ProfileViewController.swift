@@ -20,7 +20,7 @@ class ProfileViewController: UIViewController {
     }
     @IBOutlet weak var blockUserButton: UIButton! {
         didSet {
-            if participant?.isParticipantBlockedByMe() ?? false {
+            if participant?.ifBlockedByMe() ?? false {
                 blockUserButton.setTitle("Unblock User", for: .normal)
             } else {
                 blockUserButton.setTitle("Block User", for: .normal)
@@ -42,7 +42,7 @@ class ProfileViewController: UIViewController {
             profileImageView.setImageForName(string: participant?.getDisplayName() ?? "?", circular: true, textAttributes: nil)
         }
         
-        if participant?.isOnline() ?? false {
+        if participant?.ifOnline() ?? false {
             onlineStatusImageView.image = UIImage(named: "online", in: Bundle(for: ProfileViewController.self), compatibleWith: nil)
         } else {
             onlineStatusImageView.image = UIImage(named: "offline", in: Bundle(for: ProfileViewController.self), compatibleWith: nil)
@@ -53,7 +53,7 @@ class ProfileViewController: UIViewController {
     
     @IBAction func blockUserButtonTapped(_ sender: Any) {
         let progressHud = MBProgressHUD.showAdded(to: self.view, animated: true)
-        if participant?.isParticipantBlockedByMe() ?? false {
+        if participant?.ifBlockedByMe() ?? false {
             CCPClient.unblockUser(userId: participant?.getId() ?? "") { (participant, error) in
                 progressHud.hide(animated: true)
                 if error == nil {

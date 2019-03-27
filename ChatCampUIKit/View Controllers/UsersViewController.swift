@@ -187,7 +187,7 @@ extension UsersViewController {
         } else {
             cell.avatarImageView.setImageForName(string: user.getDisplayName() ?? "?", circular: true, textAttributes: nil)
         }
-        if user.isOnline() ?? false {
+        if user.ifOnline() ?? false {
             cell.onlineStatusImageView.image = UIImage(named: "online", in: Bundle(for: Message.self), compatibleWith: nil)
         } else {
             cell.onlineStatusImageView.image = UIImage(named: "offline", in: Bundle(for: Message.self), compatibleWith: nil)
