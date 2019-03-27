@@ -50,12 +50,12 @@ class Message: NSObject, MessageType {
         if ccpMessage.getType() == "text" && ccpMessage.getCustomType() != "action_link" {
             data = MessageData.text(ccpMessage.getText())
         } else if ccpMessage.getType() == "attachment" {
-            if ccpMessage.getAttachment()!.isImage() {
+            if ccpMessage.getAttachment()?.isImage() ?? false {
                 data = MessageData.photo(UIImage(named: "chat_image_placeholder", in: Bundle(for: Message.self), compatibleWith: nil) ?? UIImage())
 
                 
                 DispatchQueue.global().async {
-                    if let attachement = ccpMessage.getAttachment(), let dataURL = URL(string: attachement.getUrl()), let imageData = try? Data(contentsOf: dataURL) {
+                    if let attachement = ccpMessage.getAttachment(), let dataURL = URL(string: attachement.getUrl()), let imageData = try? Data(contentsOf: dataURL ) {
                         DispatchQueue.main.async {
                             self.data = MessageData.photo(UIImage(data: imageData) ?? UIImage())
                             self.delegate?.messageDidUpdateWithImage(message: self)
