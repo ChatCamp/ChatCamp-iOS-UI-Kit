@@ -136,13 +136,11 @@ public class ChatViewController: MessagesViewController {
                     let userNameBarButtonItem = UIBarButtonItem(title: participant.getDisplayName(), style: .plain, target: self, action: #selector(self.userProfileTapped))
                     let imageView = UIImageView.init(frame: CGRect.init(x: 0, y: 0, width: 35, height: 35))
                     let profileButton = UIButton()
-//                    profileButton.frame = CGRect(0, 0, 35, 35)
                     profileButton.frame = CGRect(x: 0, y: 0, width: 35, height: 35)
                     if let avatarUrl = participant.getAvatarUrl() {
                         imageView.sd_setImage(with: URL(string: avatarUrl), completed: nil)
                         if let image = imageView.image {
                             UIGraphicsBeginImageContextWithOptions(profileButton.frame.size, false, image.scale)
-//                            let rect = CGRect(0, 0, profileButton.frame.size.width, profileButton.frame.size.height)
                             let rect = CGRect(x: 0, y: 0, width: profileButton.frame.size.width, height: profileButton.frame.size.height)
                             UIBezierPath(roundedRect: rect, cornerRadius: rect.width/2).addClip()
                             image.draw(in: rect)
@@ -907,7 +905,7 @@ extension ChatViewController: UIDocumentMenuDelegate, UIDocumentPickerDelegate {
     }
 }
 
-// MARK:- MessageInputBarDelegate
+// MARK:- MessageInputBar - MessageInputBarDelegate
 extension ChatViewController: MessageInputBarDelegate {
     public func messageInputBar(_ inputBar: MessageInputBar, didPressSendButtonWith text: String) {
         if channel.getParticipants().count == 2 && participant?.ifBlockedByMe() ?? false {
@@ -938,7 +936,7 @@ extension ChatViewController: MessageInputBarDelegate {
     
 }
 
-// MARK:- UICollectionViewDelegate
+// MARK:- MessageKit - MessageCellDelegate
 extension ChatViewController: MessageCellDelegate {
     
     public func didTapMessage(in cell: MessageCollectionViewCell) {
@@ -992,7 +990,7 @@ extension ChatViewController: UIDocumentInteractionControllerDelegate {
     }
 }
 
-// MARK:- MessagesDataSource
+// MARK:- MessageKit - MessagesDataSource
 extension ChatViewController: MessagesDataSource {
     public func numberOfSections(in messagesCollectionView: MessagesCollectionView) -> Int {
         return mkMessages.count
@@ -1001,10 +999,6 @@ extension ChatViewController: MessagesDataSource {
     public func currentSender() -> Sender {
         return sender
     }
-    
-//    public func numberOfMessages(in messagesCollectionView: MessagesCollectionView) -> Int {
-//        return mkMessages.count
-//    }
     
     public func messageForItem(at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> MessageType {
         return mkMessages[indexPath.section]
@@ -1026,90 +1020,111 @@ extension ChatViewController: MessagesDataSource {
 //        }
 //    }
     
+    public func cellTopLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
+        if indexPath.section % 3 == 0 {
+            return NSAttributedString(string: MessageKitDateFormatter.shared.string(from: message.sentDate), attributes: [NSAttributedString.Key.font: UIFont.boldSystemFont(ofSize: 10), NSAttributedString.Key.foregroundColor: UIColor.darkGray])
+        }
+        return nil
+    }
+    
     public func messageBottomLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "HH:mm"
         let date = dateFormatter.string(from: message.sentDate)
-        let attributedString = NSMutableAttributedString(string: date)
-        attributedString.addAttribute(NSAttributedString.Key.font, value: UIFont.systemFont(ofSize: 12), range: NSString(string: date).range(of: date))
-        attributedString.addAttribute(NSAttributedString.Key.foregroundColor, value: UIColor.gray, range: NSString(string: date).range(of: date))
-
-        return attributedString
+        
+        return NSAttributedString(string: date, attributes: [NSAttributedString.Key.font: UIFont.preferredFont(forTextStyle: .caption2)])
     }
     
-//    public func cellBottomLabelAlignment(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> LabelAlignment {
-//        guard let dataSource = messagesCollectionView.messagesDataSource else {
-//            fatalError("MessagesDataSource has not been set.")
-//        }
-//
-//        return dataSource.isFromCurrentSender(message: message) ? .messageTrailing(UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 15)) : .messageLeading(.zero)
-//    }
-    
-    public func cellTopLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
+    public func messageTopLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
         let senderName = message.sender.displayName
-        let attributedString = NSMutableAttributedString(string: senderName)
-        attributedString.addAttribute(NSAttributedString.Key.font, value: UIFont.systemFont(ofSize: 14), range: NSString(string: senderName).range(of: senderName))
-        attributedString.addAttribute(NSAttributedString.Key.foregroundColor, value: UIColor.darkGray, range: NSString(string: senderName).range(of: senderName))
         
-        return attributedString
+        return NSAttributedString(string: senderName, attributes: [NSAttributedString.Key.font: UIFont.preferredFont(forTextStyle: .caption1)])
     }
 }
 
-// MARK:- MessagesLayoutDelegate
+// MARK:- MessageKit - MessagesLayoutDelegate
 extension ChatViewController: MessagesLayoutDelegate {
-    public func heightForLocation(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
-        return 0
+    
+    public func cellTopLabelHeight(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
+        return 18
     }
     
-    public func widthForMedia(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
-        return view.bounds.width / 2
+    public func messageTopLabelHeight(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
+        return 20
     }
     
-    public func heightForMedia(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
-        
-        switch message.kind {
-        case .photo(let image):
-            let height = image.size.height * view.bounds.width / (2 * image.size.width)
-            
-            return height
-        default:
-            return view.bounds.width / 2
-        }
+    public func messageBottomLabelHeight(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
+        return 16
     }
     
-    public func widthForImageInCustom(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
-        return view.bounds.width / 2
-    }
-    
-    public func heightForImageInCustom(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
-        switch message.kind {
-            // TODO:
-//        case .custom(let metadata):
-//            let image = metadata["Image"] as! UIImage
+    // TODO:
+//    public func widthForMedia(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
+//        return view.bounds.width / 2
+//    }
+//
+//    public func heightForMedia(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
+//
+//        switch message.kind {
+//        case .photo(let image):
 //            let height = image.size.height * view.bounds.width / (2 * image.size.width)
 //
 //            return height
-        default:
-            return view.bounds.width / 2
-        }
-    }
+//        default:
+//            return view.bounds.width / 2
+//        }
+//    }
+    
+    // TODO:
+//    public func widthForImageInCustom(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
+//        return view.bounds.width / 2
+//    }
+//
+//    public func heightForImageInCustom(message: MessageType, at indexPath: IndexPath, with maxWidth: CGFloat, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
+//        switch message.kind {
+//            // TODO:
+////        case .custom(let metadata):
+////            let image = metadata["Image"] as! UIImage
+////            let height = image.size.height * view.bounds.width / (2 * image.size.width)
+////
+////            return height
+//        default:
+//            return view.bounds.width / 2
+//        }
+//    }
 }
 
-// MARK:- MessagesDisplayDelegate
+// MARK:- MessageKit - MessagesDisplayDelegate
 extension ChatViewController: MessagesDisplayDelegate {
+    
+    public func textColor(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> UIColor {
+        return isFromCurrentSender(message: message) ? .white : .darkText
+    }
+    
+    public func detectorAttributes(for detector: DetectorType, and message: MessageType, at indexPath: IndexPath) -> [NSAttributedString.Key : Any] {
+        return MessageLabel.defaultAttributes
+    }
+    
+    public func enabledDetectors(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> [DetectorType] {
+        return [.address, .date, .phoneNumber, .url]
+    }
+    
     public func messageStyle(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> MessageStyle {
-        let message = mkMessages[indexPath.section]
+        let tail: MessageStyle.TailCorner = isFromCurrentSender(message: message) ? .bottomRight : .bottomLeft
         
-        switch message.kind {
-        case .photo(_):
-            let configurationClosure = { (containerView: UIImageView) in
-                let imageMask = UIImageView()
-                imageMask.image = MessageStyle.bubble.image
-                imageMask.frame = containerView.bounds
-                containerView.mask = imageMask
-                containerView.contentMode = .scaleAspectFill
-            }
-            return .custom(configurationClosure)
+        return .bubbleTail(tail, .curved)
+        
+        // TODO: Not needed anymore
+//        let message = mkMessages[indexPath.section]
+//        switch message.kind {
+//        case .photo(_):
+//            let configurationClosure = { (containerView: UIImageView) in
+//                let imageMask = UIImageView()
+//                imageMask.image = MessageStyle.bubble.image
+//                imageMask.frame = containerView.bounds
+//                containerView.mask = imageMask
+//                containerView.contentMode = .scaleAspectFill
+//            }
+//            return .custom(configurationClosure)
             // TODO:
 //        case .custom(let metadata):
 //            let configurationClosure = { (containerView: UIImageView) in
@@ -1169,9 +1184,9 @@ extension ChatViewController: MessagesDisplayDelegate {
 //                audioView.fillSuperview()
 //            }
 //            return .audio(configurationClosure)
-        default:
-            return .bubble
-        }
+//        default:
+//            return .bubble
+//        }
     }
     
     public func configureAvatarView(_ avatarView: AvatarView, for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) {
@@ -1197,7 +1212,5 @@ extension ChatViewController: MessagesDisplayDelegate {
         }
     }
     
-    public func enabledDetectors(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> [DetectorType] {
-        return [.address, .date, .phoneNumber, .url]
-    }
+    
 }

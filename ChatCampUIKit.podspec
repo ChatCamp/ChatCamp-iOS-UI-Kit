@@ -21,7 +21,6 @@ s.dependency 'DKPhotoGallery'
 s.dependency 'MBProgressHUD'
 s.dependency 'MessageKit'
 
-
 s.source_files = "ChatCampUIKit/**/*.{swift}"
 s.resources = "ChatCampUIKit/**/*.{png,jpeg,jpg,storyboard,xib}"
 end
